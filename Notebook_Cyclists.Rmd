@@ -1,0 +1,265 @@
+---
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+#the libraries used in this case study
+library(tidyverse)
+library(skimr)
+library(janitor)
+library(ggplot2)
+library(dplyr)
+```
+#Background
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to
+any other station in the system anytime. Until now, Cyclistic’s marketing strategy relied on building general awareness and appealing to broad consumer segments. One approach that helped make these things possible was the flexibility of its pricing plans: single-ride passes, full-day passes, and annual memberships. Customers who purchase single-ride or full-day passes are referred to as casual riders. Customers who purchase annual memberships are Cyclistic members.
+
+#Purpose of this case-study : 
+analyzing the Cyclistic's historical bike trip data to identify trends.
+
+#Data Source :
+The primary source of data used for this analysis is from a company called "Cyclist". Cyclistic’s historical trip data will be the primary source of data that will be used and has its source is credited and does not have any sort of bias. The data set from the company has been made available by Motivate International Inc and have been granted permission to use this data for analysis. 
+
+#Plan :
+The data set is taken from April, May, and June of the year 2020 and its validation has been checked and confirmed for its date of origin. The goal of this case study is to analyze historical bike trip data to identify trend during those months and compare changes in cyclist's behavior during those periods.
+
+##Analysis
+The first step of this analysis is to import the following data sets into R, then we include them into a dataframe
+
+```{r}
+#importing the data files into R
+April_df <- read_csv('202004_divvy_tripdata.csv')
+May_df <- read_csv('202005-divvy-tripdata.csv')
+June_df <- read_csv('202006-divvy-tripdata.csv')
+
+```
+
+Here is a preview of what the data set looks like,
+```{r}
+#preview of the data set
+head(April_df)
+
+```
+Here is the list of coloumn names inside the data set,
+```{r}
+colnames(April_df)
+```
+The coloumn used for this analysis is,
+*started_at
+*ended_at
+
+To identify trends during the 3 months, the duration of the cyclists ride is needed. To accomplish this, the time of duration can be obtained by observing the time started and time ended of the cyclists.
+```{r}
+#Finding the duration in Secs
+x <- April_df$started_at
+y<- April_df$ended_at
+ride_duration_April <- c(time_length(y-x))
+head(ride_duration_April)
+```
+Above is the duration of cyclists in the month of April measured in Seconds. Now for the duration on the other 2 months will also be calculated
+```{r}
+x <- May_df$started_at
+y<- May_df$ended_at
+ride_duration_May <- c(time_length(y-x))
+
+x <- June_df$started_at
+y<- June_df$ended_at
+ride_duration_June <- c(time_length(y-x))
+
+ride_duration_april_hours <- min(ymd.df)
+
+```
+To make sense on the data above, first we need to visualize the changes of duration during those 3 months, to do that we need to find the average of duration in each month and put in inside a table, than we can visualize it using a graph,
+```{r}
+#Finding the average
+avg_duration_April <- mean(ride_duration_April)
+avg_duration_May <- mean(ride_duration_May)
+avg_duration_June <- mean(ride_duration_June)
+average_month <- c (avg_duration_April,avg_duration_May,avg_duration_June)
+
+#the difference
+dif_April_May <- avg_duration_April - avg_duration_May
+dif_April_June <- avg_duration_April - avg_duration_June
+dif_June_May <- avg_duration_June - avg_duration_May
+difff <-  c(dif_April_May,dif_April_June,dif_June_May)
+
+#Table of duration
+month_list = c("April", "May", "June")
+duration= matrix(average_month, ncol=1, byrow=TRUE)
+rownames(duration) = month_list
+colnames(duration)<-"Average Duration"
+as.table(duration)
+cat("\n")
+cat("\n")
+#table of difference
+difference_list <- c("April - May", "April - June", "June - May")
+difference= matrix(difff, ncol = 1, byrow = TRUE)
+rownames(difference) = difference_list
+colnames(difference)<-"Average Difference between the months"
+as.table(difference)
+```
+```{r}
+#as a graph
+comparison <- c(1000)
+ggplot() +geom_point(data = April_df, aes(x = comparison, y = avg_duration_April, color = "April" ))  +geom_point(data = May_df, aes(x = comparison, y = avg_duration_May, color = "May" )) +geom_point(data = June_df, aes(x = comparison, y = avg_duration_June, color = "June" ))+labs(title ="Comparison of number of riders in the 3 months",subtitle=("From April - June"))
+```
+
+```{r}
+months_avg_list<- c(avg_duration_April,avg_duration_May,avg_duration_June)
+duration_dataframe <- data.frame(months_avg_list, month_list)
+ggplot(data = duration_dataframe, aes(x = month_list, y = months_avg_list,color ="Average Duration of riders"))+geom_point()+geom_line()+labs(title = "Comparison between April, May, and June 2020")+geom_smooth()
+``` 
+
+
+by using a graph we could compare the difference between the 3 months much more easily. Based on the data above, we could determine that the average duration of cyclists in the month of April is higher than in the month of June and May. With the difference between April - May being around 147 seconds, the difference between April - June being around 138 seconds, and the difference between June -  May being around 9 seconds.
+
+Based on those numbers, it can be concluded that there was a huge spike in the month of April in 2020 if we compare it to the other 2 months. There are numerous factors on why that might happen. 
+
+Now lets analyze based on the status of the rider, if they are a member or not, a way to do that is to filter out the data of members and casuals, first we can find how much of the cyclists are members and how much are casuals
+
+Filtering out members from the data set of each month,
+```{r}
+#filtering out members in April
+casual_April <- April_df %>%
+  filter(April_df$member_casual == "casual")
+
+#filtering out members in May
+casual_May <- May_df %>%
+  filter(May_df$member_casual == "casual")
+
+#filtering out members in June
+casual_June <- June_df %>%
+  filter(June_df$member_casual == "casual")
+
+
+```
+ To filter out the casual cyclists data from the data set, we could just make another data set with filter on member cyclists data
+
+```{r}
+#filtering out casuals in April
+member_April <- April_df %>%
+  filter(April_df$member_casual == "member")
+
+#filtering out casuals in May
+member_May <- May_df %>%
+  filter(May_df$member_casual == "member")
+
+#filtering out casuals in June
+member_June <- June_df %>%
+  filter(June_df$member_casual == "member")
+```
+We could also find how much are members and how much are casuals,
+```{r}
+#casuals
+total_casual_April <-nrow(casual_April)
+total_casual_May <-nrow(casual_May)
+total_casual_June <-nrow(casual_June)
+
+#members
+total_member_April <-nrow(member_April)
+total_member_May <-nrow(member_May)
+total_member_June <-nrow(member_June)
+```
+
+
+```{r}
+slices <- c(total_casual_April,total_member_April)
+lbls <- c("Casuals", "Members")
+pie(slices, labels = lbls, main="Comparison of Members and Casuals in April")
+```
+```{r}
+slices <- c(total_casual_May,total_member_May)
+lbls <- c("Casuals", "Members")
+pie(slices, labels = lbls, main="Comparison of Members and Casuals in May")
+```
+```{r}
+slices <- c(total_casual_June,total_member_June)
+lbls <- c("Casuals", "Members")
+pie(slices, labels = lbls, main="Comparison of Members and Casuals in June")
+```
+Now to calculate the average duration on casual and member cyclists, the duration on casual and member cyclists must be calculated first then the average could be obtained. then we could compare them.
+
+Another analysis that is possible is to find which riders leave the earliest, the member cyclists or the casual ones.
+
+```{r}
+#duration on casuals
+x <- casual_April$started_at
+y<- casual_April$ended_at
+casual_ride_duration_April <- c(time_length(y-x))
+
+x <- casual_May$started_at
+y<- casual_May$ended_at
+casual_ride_duration_May <- c(time_length(y-x))
+
+x <- casual_June$started_at
+y<- casual_June$ended_at
+casual_ride_duration_June <- c(time_length(y-x))
+
+#Average duration on casuals
+casual_avg_duration_April <- mean(casual_ride_duration_April)
+casual_avg_duration_May <- mean(casual_ride_duration_May)
+casual_avg_duration_June <- mean(casual_ride_duration_June)
+casual_avg_duration <- c(casual_avg_duration_April,casual_avg_duration_May,casual_avg_duration_June)
+#Table
+avg_casual_table = matrix(casual_avg_duration, ncol = 1, byrow = TRUE)
+rownames(avg_casual_table) <- month_list
+colnames(avg_casual_table) <- "Average Duration for Casuals"
+```
+
+```{r}
+#duration on members
+x <- member_April$started_at
+y<- member_April$ended_at
+member_ride_duration_April <- c(time_length(y-x))
+
+x <- member_May$started_at
+y<- member_May$ended_at
+member_ride_duration_May <- c(time_length(y-x))
+
+x <- member_June$started_at
+y<- member_June$ended_at
+member_ride_duration_June <- c(time_length(y-x))
+
+#Average duration on casuals
+member_avg_duration_April <- mean(member_ride_duration_April)
+member_avg_duration_May <- mean(member_ride_duration_May)
+member_avg_duration_June <- mean(member_ride_duration_June)
+member_avg_duration <- c(member_avg_duration_April,member_avg_duration_May,member_avg_duration_June)
+#Table
+avg_member_table = matrix(member_avg_duration, ncol = 1, byrow = TRUE)
+rownames(avg_member_table) <- month_list
+colnames(avg_member_table) <- "Average Duration for Members"
+```
+
+```{r}
+#which has the earliest riders
+
+started_at_April_min <- min(ymd_hms(April_df$started_at))
+started_at_May_min <- min(ymd_hms(May_df$started_at))
+started_at_June_min <- min(ymd_hms(June_df$started_at))
+
+started_at_min <- c(started_at_April_min,started_at_May_min)
+str(started_at_min)
+min_total <- min(ymd_hms(started_at_min))
+```
+
+Now to compare,
+
+```{r}
+as.table(avg_casual_table)
+cat("\n")
+cat("\n")
+as.table(avg_member_table)
+cat("\n")
+cat("\n")
+print("Earliest Commute in the 3 months :")
+print(min_total)
+```
+Based on the pie charts, it can be concluded that there are more members than casual cyclists in those 3 months of 2020. Another conclusion is that on average, casual riders has a longer duration in their bicycles than members. There numerous factors on why that might happen, many which may need more research into justifying the cause.
+
+Based on the pie charts, we can also conclude that the number of casual riders are expanding. This might be caused by several reasons. They might have cancelled their subscription or they might have stopped using the bicycles all together and used another form of transport or they don't require that type of transport anymore.
+
+Based on this analysis, there is a spike in riders in the month of April, where the number of riders rise drastically compared to 2 of the other months. But this can't be compared to the rest of the 9 months of the year as there are not enough data to prove that April has the highest amount of riders. But it is safe to assume that April has more riders than July and May. There is a rising trend on casual riders, which mean there is a need in more effort in maintaining members and promoting the service to the public.
